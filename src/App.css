@@ -1,0 +1,71 @@
+#root {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.5s ease;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.bg-terang { background-color: #f0f2f5; color: #333; }
+.bg-gelap { background-color: #1a1a2e; color: #fff; }
+
+.card {
+  text-align: center;
+  padding: 2rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+}
+
+h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+p { font-size: 1.2rem; line-height: 1.6; }
+
+button {
+  margin-top: 2rem;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(45deg, #ff416c, #ff4b2b);
+  color: white;
+  transition: transform 0.2s;
+}
+
+button:hover { transform: scale(1.1); }
+
+footer {
+  position: absolute;
+  bottom: 20px;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+/* Animasi Kembang Api Sederhana */
+.firework {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 
+    0 0 #fff, 0 0 #fff, 0 0 #fff, 0 0 #fff,
+    -100px -100px #ff0, 100px -100px #f0f, 
+    -100px 100px #0ff, 100px 100px #0f0;
+  animation: explode 1s infinite;
+}
+
+@keyframes explode {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(20); opacity: 0; }
+}
