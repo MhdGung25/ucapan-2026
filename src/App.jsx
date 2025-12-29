@@ -7,7 +7,6 @@ import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 
 function App() {
-  // --- STATES ---
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('userAuth');
     return saved ? JSON.parse(saved) : null;
@@ -16,13 +15,12 @@ function App() {
   const [phase, setPhase] = useState('auth');
   const [feedback, setFeedback] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [timeLeft, setTimeLeft] = useState({ jam: 0, menit: 0, detik: 0 });
+  const [timeLeft, setTimeLeft] = useState({ hari: 0, jam: 0, menit: 0, detik: 0 }); // Tambah HARI agar akurat
   const [isReady, setIsReady] = useState(false);
 
   const FORM_ENDPOINT = "https://formsubmit.co/muhammadgung2003@gmail.com";
   const GOOGLE_CLIENT_ID = "558230089000-ei09o0314gugru2pqig5iskdb2rdbs38.apps.googleusercontent.com"; 
 
-  // --- LOGIKA UTAMA: Alur Halaman ---
   useEffect(() => {
     if (!user) {
       setPhase('auth');
@@ -36,20 +34,21 @@ function App() {
     }
   }, [user]);
 
-  // --- LOGIKA 2: Countdown Timer 2026 ---
+  // --- LOGIKA COUNTDOWN YANG DIPERBAIKI (Target: 1 Jan 2026) ---
   useEffect(() => {
     const timer = setInterval(() => {
-      const targetDate = new Date("Jan 1, 2026 00:00:00").getTime();
-      const now = new Date().getTime();
+      const targetDate = new Date("January 1, 2026 00:00:00").getTime();
+      const now = new Date().getTime(); // Mengambil waktu lokal dari sistem (29 Des 2025)
       const difference = targetDate - now;
 
       if (difference <= 0) {
         setIsReady(true);
-        setTimeLeft({ jam: 0, menit: 0, detik: 0 });
+        setTimeLeft({ hari: 0, jam: 0, menit: 0, detik: 0 });
         clearInterval(timer);
       } else {
         setIsReady(false);
         setTimeLeft({
+          hari: Math.floor(difference / (1000 * 60 * 60 * 24)),
           jam: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
           menit: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
           detik: Math.floor((difference % (1000 * 60)) / 1000),
@@ -59,7 +58,6 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // --- HANDLERS ---
   const handleLoginSuccess = (credentialResponse) => {
     try {
       const decoded = jwtDecode(credentialResponse.credential);
@@ -108,7 +106,6 @@ function App() {
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white overflow-hidden relative font-sans text-center p-6">
         
-        {/* Background Bintang */}
         <div className="fixed inset-0 pointer-events-none opacity-20">
           {starPositions.map((star) => (
             <div key={star.id} className="absolute bg-white rounded-full animate-pulse"
@@ -119,7 +116,6 @@ function App() {
 
         <div className="max-w-2xl w-full z-10">
           
-          {/* FASE 0: Auth */}
           {phase === 'auth' && (
             <div className="animate-in fade-in zoom-in duration-700 space-y-8">
               <div className="flex justify-center"><Sparkles className="text-orange-500 w-12 h-12 animate-bounce" /></div>
@@ -131,11 +127,8 @@ function App() {
             </div>
           )}
 
-          {/* FASE 1: Form Feedback (Tanpa Foto) */}
           {phase === 'feedback' && user && (
             <div className="animate-in slide-in-from-bottom duration-500 space-y-6 flex flex-col items-center">
-              
-              {/* Dekorasi Pengganti Foto */}
               <div className="flex items-center justify-center bg-orange-500/10 w-20 h-20 rounded-full border border-orange-500/20 mb-2">
                 <MessageCircle className="text-orange-500 w-10 h-10" />
               </div>
@@ -161,19 +154,13 @@ function App() {
                   disabled={isSubmitting || !feedback.trim()}
                   className="w-full mt-8 bg-orange-500 hover:bg-orange-600 disabled:bg-slate-800 text-white py-5 rounded-2xl font-black flex items-center justify-center gap-3 transition-all active:scale-95 shadow-[0_0_20px_rgba(249,115,22,0.3)]"
                 >
-                  {isSubmitting ? (
-                    <Loader2 className="animate-spin" />
-                  ) : (
-                    <><Save size={20}/> SIMPAN PESAN KE 2026</>
-                  )}
+                  {isSubmitting ? <Loader2 className="animate-spin" /> : <><Save size={20}/> SIMPAN PESAN KE 2026</>}
                 </button>
               </div>
-              
               <p className="text-[9px] opacity-30 uppercase tracking-widest italic">Pesan yang sudah dikirim tidak dapat diubah kembali</p>
             </div>
           )}
 
-          {/* FASE 2: Idle (Countdown) */}
           {phase === 'idle' && (
             <div className="space-y-12 animate-in fade-in duration-700">
                <div className="flex flex-col items-center gap-2">
@@ -181,10 +168,10 @@ function App() {
                     <CheckCircle size={12} /> Pesan Berhasil Disimpan
                   </div>
                   <h2 className="text-5xl md:text-6xl font-black italic mt-4 tracking-tighter uppercase leading-tight">Sampai Jumpa <br/> di 2026</h2>
-                  <p className="opacity-50 text-sm italic">Terima kasih, {user?.given_name}. Harapanmu telah kami kunci.</p>
+                  <p className="opacity-50 text-sm italic text-orange-400">Terima kasih, {user?.given_name || 'Muhammad'}. Harapanmu telah kami kunci.</p>
                </div>
 
-               <div className="flex justify-center gap-3 md:gap-4">
+               <div className="flex justify-center gap-3 md:gap-4 flex-wrap">
                 {Object.entries(timeLeft).map(([label, value]) => (
                   <div key={label} className="bg-white/5 p-4 md:p-6 rounded-3xl border border-white/5 min-w-[80px] md:min-w-[100px]">
                     <div className="text-3xl md:text-5xl font-black tabular-nums">{String(value).padStart(2, '0')}</div>
