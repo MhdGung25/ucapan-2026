@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Sparkles, Lock, Save, Loader2, CheckCircle, Heart, MessageCircle, BellRing, BellOff 
 } from 'lucide-react';
@@ -22,25 +22,42 @@ function App() {
   const FORM_ENDPOINT = "https://formsubmit.co/muhammadgung2003@gmail.com";
   const GOOGLE_CLIENT_ID = "558230089000-ei09o0314gugru2pqig5iskdb2rdbs38.apps.googleusercontent.com"; 
 
-  // Register Service Worker untuk Notifikasi Background
+  // PWA Service Worker Registration
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then(reg => {
-        console.log('SW Registered!', reg);
-      }).catch(err => console.log('SW Registration failed', err));
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(() => console.log('Service Worker Registered'))
+          .catch(err => console.error('SW Registration failed', err));
+      });
     }
   }, []);
 
+  // Update Phase based on User State
   useEffect(() => {
     if (!user) {
       setPhase('auth');
     } else {
-      const hasSubmittedEmail = localStorage.getItem(`submitted_${user.email}`) === 'true';
-      setPhase(hasSubmittedEmail ? 'idle' : 'feedback');
+      const hasSubmitted = localStorage.getItem(`submitted_${user.email}`) === 'true';
+      setPhase(hasSubmitted ? 'idle' : 'feedback');
     }
   }, [user]);
 
-  // Logic Countdown & Auto-Notification
+  // Notification Logic
+  const triggerNewYearNotif = useCallback(() => {
+    if (Notification.permission === 'granted' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(registration => {
+        registration.showNotification("SELAMAT TAHUN BARU 2026! 🎉", {
+          body: `Halo ${user?.given_name || 'Pejuang'}, gerbang harapanmu sudah terbuka!`,
+          icon: "https://cdn-icons-png.flaticon.com/512/190/190411.png",
+          vibrate: [500, 110, 500],
+          requireInteraction: true
+        });
+      });
+    }
+  }, [user]);
+
+  // Countdown Timer
   useEffect(() => {
     const timer = setInterval(() => {
       const targetDate = new Date("January 1, 2026 00:00:00").getTime();
@@ -48,7 +65,7 @@ function App() {
       const difference = targetDate - now;
 
       if (difference <= 0) {
-        if (!isReady) triggerNewYearNotif(); // Panggil notif saat pas nol
+        if (!isReady) triggerNewYearNotif();
         setIsReady(true);
         setTimeLeft({ hari: 0, jam: 0, menit: 0, detik: 0 });
         clearInterval(timer);
@@ -63,7 +80,7 @@ function App() {
       }
     }, 1000);
     return () => clearInterval(timer);
-  }, [isReady]);
+  }, [isReady, triggerNewYearNotif]);
 
   const requestNotif = async () => {
     const permission = await Notification.requestPermission();
@@ -76,25 +93,14 @@ function App() {
     }
   };
 
-  const triggerNewYearNotif = () => {
-    if (Notification.permission === 'granted') {
-      navigator.serviceWorker.ready.then(registration => {
-        registration.showNotification("SELAMAT TAHUN BARU 2026! 🎉", {
-          body: `Halo ${user?.given_name || 'Pejuang'}, gerbang harapanmu sudah terbuka!`,
-          vibrate: [500, 110, 500, 110, 450, 110, 200, 110, 170, 40, 450, 110, 200, 110, 170, 40, 500],
-          requireInteraction: true // Notif tidak akan hilang sampai di-klik
-        });
-      });
-    }
-  };
-
   const handleLoginSuccess = (credentialResponse) => {
     try {
       const decoded = jwtDecode(credentialResponse.credential);
       setUser(decoded);
       localStorage.setItem('userAuth', JSON.stringify(decoded));
     } catch (err) {
-      alert("Gagal login.");
+      console.error("Login Error:", err);
+      alert("Gagal memproses data login.");
     }
   };
 
@@ -117,10 +123,11 @@ function App() {
         localStorage.setItem(`submitted_${user.email}`, 'true');
         confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         setPhase('idle');
-        requestNotif(); // Tawarkan notif setelah isi pesan
+        if (Notification.permission === 'default') requestNotif();
       }
+    // eslint-disable-next-line no-unused-vars
     } catch (error) {
-      alert("Gagal mengirim.");
+      alert("Gagal mengirim pesan. Coba lagi nanti.");
     } finally {
       setIsSubmitting(false);
     }
@@ -134,7 +141,7 @@ function App() {
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white overflow-hidden relative font-sans text-center p-6">
         
-        {/* Star Background */}
+        {/* Animated Background */}
         <div className="fixed inset-0 pointer-events-none opacity-20">
           {starPositions.map((star) => (
             <div key={star.id} className="absolute bg-white rounded-full animate-pulse"
@@ -189,10 +196,9 @@ function App() {
                     <CheckCircle size={12} /> Pesan Berhasil Disimpan
                   </div>
                   
-                  {/* Notification Toggle Button */}
                   {notifPermission !== 'granted' ? (
-                    <button onClick={requestNotif} className="flex items-center gap-2 text-orange-400 text-[10px] font-bold uppercase border border-orange-500/30 px-4 py-2 rounded-full hover:bg-orange-500/10 transition-all">
-                      <BellRing size={12} className="animate-shake" /> Aktifkan Alarm Tahun Baru
+                    <button onClick={requestNotif} className="flex items-center gap-2 text-orange-400 text-[10px] font-bold uppercase border border-orange-500/30 px-4 py-2 rounded-full hover:bg-orange-500/10 transition-all cursor-pointer">
+                      <BellRing size={12} className="animate-bounce" /> Aktifkan Alarm Tahun Baru
                     </button>
                   ) : (
                     <div className="flex items-center gap-2 text-blue-400 text-[10px] font-bold uppercase border border-blue-500/30 px-4 py-2 rounded-full bg-blue-500/5">
