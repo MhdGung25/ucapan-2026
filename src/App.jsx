@@ -8,32 +8,49 @@ import Auth from './pages/Auth';
 
 /**
  * Guard Component: ProtectedRoute
- * Mengecek ketersediaan session user di localStorage.
  */
 const ProtectedRoute = ({ children }) => {
+  // Ambil data user dari localStorage
   const user = localStorage.getItem('currentUser');
   
-  // Jika data user TIDAK ADA, arahkan ke login
+  // Jika tidak ada user, tendang ke halaman login
   if (!user) {
     return <Navigate to="/login" replace />;
   }
   
-  // Jika ADA, tampilkan halaman yang diminta
+  return children;
+};
+
+/**
+ * Guard Component: PublicRoute
+ * Mencegah user yang sudah login kembali ke halaman login (Auth)
+ */
+const PublicRoute = ({ children }) => {
+  const user = localStorage.getItem('currentUser');
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
   return children;
 };
 
 function App() {
   return (
     <Router>
-      {/* Wrapper Utama dengan Background gelap konsisten */}
+      {/* Wrapper Utama */}
       <div className="font-sans antialiased bg-[#020617] min-h-screen text-slate-50 selection:bg-yellow-500 selection:text-black">
         
         <Routes>
-          {/* 1. ROUTE LOGIN (Pintu Masuk Utama) */}
-          <Route path="/login" element={<Auth />} />
+          {/* 1. ROUTE LOGIN (Diproteksi agar user yang sudah login tidak bisa masuk sini lagi) */}
+          <Route 
+            path="/login" 
+            element={
+              <PublicRoute>
+                <Auth />
+              </PublicRoute>
+            } 
+          />
 
           {/* 2. PROTECTED ROUTES (Halaman Privat) */}
-          {/* Halaman Home */}
           <Route 
             path="/" 
             element={
@@ -43,7 +60,6 @@ function App() {
             } 
           />
           
-          {/* Halaman Wishes */}
           <Route 
             path="/wishes" 
             element={
@@ -53,7 +69,6 @@ function App() {
             } 
           />
           
-          {/* Halaman Gallery */}
           <Route 
             path="/gallery" 
             element={
@@ -64,7 +79,6 @@ function App() {
           />
 
           {/* 3. CATCH-ALL REDIRECT */}
-          {/* Jika user mengakses path ngasal, arahkan ke Home (yang akan dicek login-nya) */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
 
